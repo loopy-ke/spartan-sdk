@@ -1,0 +1,25 @@
+{
+  "name": "loopyke/spartan-sdk",
+  "description": "An easier way of accessing spartan realm eco services",
+  "type": "library",
+  "require": {
+    "guzzlehttp/guzzle": "^6.3",
+    "nesbot/carbon": "^1.22"
+  },
+  "require-dev": {
+    "fzaninotto/faker": "~1.4"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Griffins Oringo",
+      "email": "griffins@loopy.co.ke"
+    }
+  ],
+  "minimum-stability": "dev",
+  "autoload": {
+    "psr-4": {
+      "Loopy\\": "src/"
+    }
+  }
+}
