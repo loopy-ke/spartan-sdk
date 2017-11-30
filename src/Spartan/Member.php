@@ -12,6 +12,17 @@ class Member
     protected $client;
     protected $attributes = [];
     protected $original = [];
+    protected $exists = false;
+
+    /**
+     * Member constructor.
+     * @param array $attributes
+     */
+    public function __construct(array $attributes = [])
+    {
+        $this->attributes = $attributes;
+    }
+
 
     /**
      * @return Client
@@ -40,6 +51,7 @@ class Member
     {
         $this->attributes = (array)$this->client->get("/member/$id_type/$number");
         $this->original = $this->attributes;
+        $this->exists = true;
         return $this;
     }
 
@@ -69,13 +81,32 @@ class Member
         return $this;
     }
 
+    /**
+     * @param $type
+     * @param $number
+     * @return $this
+     */
+    public function addId($type, $number)
+    {
+        $this->attributes['ids'][] = (object)['type' => $type, 'number' => $number];
+        return $this;
+    }
+
     public function save()
     {
-        $diff = $this->diff();
-        if (count($diff) > 0) {
-            $this->client->patch("/member/$this->id", $diff);
-            $this->original = $this->attributes;
+        if ($this->exists) {
+            $diff = $this->diff();
+            if (count($diff) > 0) {
+                $this->client->patch("/member/$this->id", $diff);
+                $this->original = $this->attributes;
+            }
+        } else {
+            $type = $this->ids[0]->type;
+            $number = $this->ids[0]->number;
+            $this->attributes = $this->client->postJson("/member/$type/$number", $this->attributes);
+            $this->exists = true;
         }
+        $this->original = $this->attributes;
         return true;
     }
 
@@ -88,5 +119,11 @@ class Member
             }
         }
         return $diff;
+    }
+
+    public function addFile($path)
+    {
+        $file = $this->client->postFile("/file/", 'file', $path);
+        $this->client->postJson("/photo/$this->id", ['id' => $file->id]);
     }
 }

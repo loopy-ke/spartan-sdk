@@ -16,6 +16,9 @@ class Client
 
     public function __construct($app_id, $secret, $options = [])
     {
+        if (!isset($options['base_uri'])) {
+            $options['base_uri'] = 'https://core.spartancash.co.ke';
+        }
         $this->client = new \GuzzleHttp\Client($options);
         $this->app_id = $app_id;
         $this->secret = $secret;
@@ -37,6 +40,7 @@ class Client
 
     public function postJson($url, $params)
     {
+        $this->files = [];
         $body = json_encode($params);
         $request = new Request('post', $url, ['Accept' => 'application/json', 'Content-type' => 'application/json'], $body);
         $request = $this->prepareRequest($request);
