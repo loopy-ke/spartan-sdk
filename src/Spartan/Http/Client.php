@@ -1,6 +1,6 @@
 <?php
 
-namespace Loopy\Spartan;
+namespace Loopy\Spartan\Http;
 
 use Carbon\Carbon;
 use GuzzleHttp\Psr7\MultipartStream;
@@ -14,9 +14,9 @@ class Client
 
     protected $files = [];
 
-    public function __construct($app_id, $secret)
+    public function __construct($app_id, $secret, $options = [])
     {
-        $this->client = new \GuzzleHttp\Client(['http_errors' => false]);
+        $this->client = new \GuzzleHttp\Client($options);
         $this->app_id = $app_id;
         $this->secret = $secret;
     }
@@ -32,7 +32,7 @@ class Client
         $request = new Request('get', $url, ['Accept' => 'application/json']);
 
         $request = $this->prepareRequest($request);
-        return $this->client->send($request);
+        return $this->send($request);
     }
 
     public function postJson($url, $params)
@@ -40,7 +40,15 @@ class Client
         $body = json_encode($params);
         $request = new Request('post', $url, ['Accept' => 'application/json', 'Content-type' => 'application/json'], $body);
         $request = $this->prepareRequest($request);
-        return $this->client->send($request);
+        return $this->send($request);
+    }
+
+    public function patch($url, $params)
+    {
+        $body = json_encode($params);
+        $request = new Request('patch', $url, ['Accept' => 'application/json', 'Content-type' => 'application/json'], $body);
+        $request = $this->prepareRequest($request);
+        return $this->send($request);
     }
 
     public function postFile($url, $field, $file)
@@ -57,7 +65,7 @@ class Client
         $request = new Request('post', $url, ['Accept' => 'application/json', 'Content-type' => 'multipart/form-data;boundary="' . $body->getBoundary() . '"'], $body);
         $request = $request->withBody($body);
         $request = $this->prepareRequest($request);
-        return $this->client->send($request);
+        return $this->send($request);
     }
 
     /**
@@ -140,6 +148,15 @@ class Client
                 return $string;
             }
         }
+    }
+
+    private function send($request)
+    {
+        $response = new Response($this->client->send($request));
+        if ($response->isJson() && $response->getResponse()->getStatusCode() >= 200 && $response->getResponse()->getStatusCode() < 300) {
+            return $response->parse();
+        }
+        return $response;
     }
 
 }

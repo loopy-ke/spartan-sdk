@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Loopy\Spartan;
+namespace Loopy\Spartan\Http;
 
 
 class File extends \SplFileInfo
