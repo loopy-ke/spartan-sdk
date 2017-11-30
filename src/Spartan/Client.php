@@ -12,6 +12,8 @@ class Client
     protected $secret;
     protected $client;
 
+    protected $files = [];
+
     public function __construct($app_id, $secret)
     {
         $this->client = new \GuzzleHttp\Client(['http_errors' => false]);
@@ -41,12 +43,19 @@ class Client
         return $this->client->send($request);
     }
 
-    public function postFile($url, $field, $filename)
+    public function postFile($url, $field, $file)
     {
-        $file = new File($filename, $field);
-        $body = ['multipart' => [$file->toArray()]];
-        $request = new Request('post', $url, ['Accept' => 'application/json', 'Content-type' => 'multipart/form-data'], $body);
-        $request = $request->withBody(new MultipartStream($body));
+        return $this->postFiles($url, [$field => $file]);
+    }
+
+    public function postFiles($url, array $files)
+    {
+        foreach ($files as $field => $file) {
+            $this->files[] = (new File($file, $field))->toArray();
+        }
+        $body = new MultipartStream($this->files);
+        $request = new Request('post', $url, ['Accept' => 'application/json', 'Content-type' => 'multipart/form-data;boundary="' . $body->getBoundary() . '"'], $body);
+        $request = $request->withBody($body);
         $request = $this->prepareRequest($request);
         return $this->client->send($request);
     }
@@ -70,7 +79,22 @@ class Client
      */
     private function getContentMd5(Request $request)
     {
-        return md5($request->getBody());
+        if (count($this->files) > 0) {
+            $files = $this->files;
+            uasort($files, function ($a, $b) {
+                if ($a['name'] == $b['name']) {
+                    return 0;
+                }
+                return strcmp($a['name'], $b['name']);
+            });
+
+            $string = '';
+            foreach ($files as $file) {
+                $string .= $file['name'] . "\n" . $file['filename'] . "\n" . $file['md5'] . "\n";
+            }
+            return md5($string);
+        }
+        return md5($request->getBody()->getContents());
     }
 
     /**
@@ -82,7 +106,7 @@ class Client
         $header = $request->getHeader('Content-type');
 
         if (!in_array($request->getMethod(), ['GET', 'DELETE']) && count($header) > 0) {
-            return $header[0];
+            return implode(";", $header);
         }
 
         return '';

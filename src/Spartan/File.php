@@ -21,10 +21,10 @@ class File extends \SplFileInfo
     public function toArray()
     {
         return [
-            'name' => $this->name,
-            'contents' => fopen($this->getPath(), 'r'),
+            'contents' => fopen($this->getRealPath(), 'r'),
             'filename' => $this->getFilename(),
+            'md5' => md5_file($this->getRealPath()),
+            'name' => $this->name,
         ];
-
     }
 }
