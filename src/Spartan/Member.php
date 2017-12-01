@@ -56,6 +56,18 @@ class Member
     }
 
     /**
+     * @param $id
+     * @return $this
+     */
+    public function findWithInternalId($id)
+    {
+        $this->attributes = (array)$this->client->get("/member/$id");
+        $this->original = $this->attributes;
+        $this->exists = true;
+        return $this;
+    }
+
+    /**
      * @param null $client
      * @return $this
      */
@@ -92,10 +104,30 @@ class Member
         return $this;
     }
 
+    /**
+     * @param $type
+     * @param $number
+     * @return $this
+     */
+    public function removeId($type)
+    {
+        foreach ($this->attributes['ids'] as $key => $id) {
+            if ($id->type == $type) {
+                unset($this->attributes['ids'][$key]);
+            }
+        }
+        $this->attributes['ids'] = array_values($this->attributes['ids']);
+        return $this;
+    }
+
     public function save()
     {
         if ($this->exists) {
             $diff = $this->diff();
+            if (isset($diff['ids'])) {
+                unset($diff['ids']);
+                $this->updateIds();
+            }
             if (count($diff) > 0) {
                 $this->client->patch("/member/$this->id", $diff);
                 $this->original = $this->attributes;
@@ -107,7 +139,7 @@ class Member
             $this->exists = true;
         }
         $this->original = $this->attributes;
-        return true;
+        return $this;
     }
 
     protected function diff()
@@ -121,9 +153,78 @@ class Member
         return $diff;
     }
 
-    public function addFile($path)
+    public function addPhoto($path)
     {
         $file = $this->client->postFile("/file/", 'file', $path);
         $this->client->postJson("/photo/$this->id", ['id' => $file->id]);
     }
+
+    private function updateIds()
+    {
+        $ids = $this->attributes['ids'];
+        $ids_ = $this->original['ids'];
+
+        $count = max(count($this->original['ids']), count($this->attributes['ids']));
+        $operations = [];
+        $foundOriginal = [];
+        for ($i = 0; $i < $count; $i++) {
+            if (isset($ids[$i])) {
+                $found = false;
+                $updated = false;
+                $id = (object)$ids[$i];
+                foreach ($ids_ as $id_) {
+                    $id_ = (object)$id_;
+                    if ($id_ == $id) {
+                        $found = true;
+                        $foundOriginal[] = $id_;
+                        break;
+                    } else if ($id->type == $id_->type) {
+                        $updated = true;
+                        $found = true;
+                    }
+                }
+                if (!$found) {
+                    $operations[] = ['type' => 'add', 'identity' => $id];
+                } else if ($updated) {
+                    $operations[] = ['type' => 'update', 'identity' => $id];
+                }
+            }
+        }
+
+        //find deleted elements
+        foreach ($this->original['ids'] as $id) {
+            if (!in_array($id, $this->attributes['ids'])) {
+                $operations[] = ['type' => 'delete', 'identity' => $id];
+            }
+        }
+
+        $this->syncIds($operations);
+    }
+
+    private function syncIds(array $operations)
+    {
+        $sets = [];
+        foreach ($operations as $operation) {
+            $sets[$operation['type']][] = $operation['identity'];
+        }
+        foreach ($sets as $type => $set) {
+            switch ($type) {
+                case 'add':
+                    $this->client->postJson("/member/identity/$this->id", ['ids' => $set]);
+                    break;
+                case 'update':
+                    $this->client->patch("/member/identity/$this->id", ['ids' => $set]);
+                    break;
+                case 'delete':
+                    $this->client->delete("/member/identity/$this->id", ['ids' => $set]);
+            }
+        }
+    }
+
+    public function __toString()
+    {
+        return json_encode($this->attributes, JSON_PRETTY_PRINT);
+    }
+
+
 }

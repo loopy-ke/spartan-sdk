@@ -31,6 +31,7 @@ class Client
      */
     public function get($url, $params = [])
     {
+        $this->files = [];
         $url .= '?' . http_build_query($params);
         $request = new Request('get', $url, ['Accept' => 'application/json']);
 
@@ -49,6 +50,7 @@ class Client
 
     public function patch($url, $params)
     {
+        $this->files = [];
         $body = json_encode($params);
         $request = new Request('patch', $url, ['Accept' => 'application/json', 'Content-type' => 'application/json'], $body);
         $request = $this->prepareRequest($request);
@@ -117,7 +119,7 @@ class Client
     {
         $header = $request->getHeader('Content-type');
 
-        if (!in_array($request->getMethod(), ['GET', 'DELETE']) && count($header) > 0) {
+        if (!in_array($request->getMethod(), ['GET']) && count($header) > 0) {
             return implode(";", $header);
         }
 
@@ -161,6 +163,15 @@ class Client
             return $response->parse();
         }
         return $response;
+    }
+
+    public function delete($url, $params)
+    {
+        $this->files = [];
+        $body = json_encode($params);
+        $request = new Request('delete', $url, ['Accept' => 'application/json', 'Content-type' => 'application/json'], $body);
+        $request = $this->prepareRequest($request);
+        return $this->send($request);
     }
 
 }
