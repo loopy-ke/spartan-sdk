@@ -19,6 +19,8 @@ class Client
         if (!isset($options['base_uri'])) {
             $options['base_uri'] = 'https://core.spartancash.co.ke';
         }
+        $options['http_errors'] = true;
+
         $this->client = new \GuzzleHttp\Client($options);
         $this->app_id = $app_id;
         $this->secret = $secret;

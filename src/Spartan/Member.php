@@ -13,6 +13,7 @@ class Member
     protected $attributes = [];
     protected $original = [];
     protected $exists = false;
+    protected $query = [];
 
     /**
      * Member constructor.
@@ -157,6 +158,26 @@ class Member
     {
         $file = $this->client->postFile("/file/", 'file', $path);
         $this->client->postJson("/photo/$this->id", ['id' => $file->id]);
+    }
+
+    public function where($criteria, $value, $operator = '=')
+    {
+        $this->query[$criteria] = $operator . '?' . $value;
+        return $this;
+    }
+
+    public function get()
+    {
+        $response = $this->client->get("/search", $this->query);
+        $members = [];
+        if (count($response->data) > 0) {
+            foreach ($response->data as $attributes) {
+                $members[] = (new static((array)$attributes))->setClient($this->getClient());
+            }
+        }
+        $response->members = $members;
+        unset($response->data);
+        return $response;
     }
 
     private function updateIds()
