@@ -1,5 +1,5 @@
 {
-  "name": "loopyke/spartan-sdk",
+  "name": "loopy/spartan-sdk",
   "description": "An easier way of accessing spartan realm eco services",
   "type": "library",
   "require": {
