@@ -136,7 +136,7 @@ class Member
         } else {
             $type = $this->ids[0]->type;
             $number = $this->ids[0]->number;
-            $this->attributes = $this->client->postJson("/member/$type/$number", $this->attributes);
+            $this->attributes = (array)$this->client->postJson("/member/$type/$number", $this->attributes);
             $this->exists = true;
         }
         $this->original = $this->attributes;
