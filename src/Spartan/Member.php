@@ -160,7 +160,7 @@ class Member
         $this->client->postJson("/photo/$this->id", ['id' => $file->id]);
     }
 
-    public function where($criteria, $value, $operator = '=')
+    public function where($criteria, $value, $operator = 'like')
     {
         $this->query[$criteria] = $operator . '?' . $value;
         return $this;
