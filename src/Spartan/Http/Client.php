@@ -17,7 +17,7 @@ class Client
     public function __construct($app_id, $secret, $options = [])
     {
         if (!isset($options['base_uri'])) {
-            $options['base_uri'] = 'https://core.spartancash.co.ke';
+            $options['base_uri'] = 'https://ca.spartancash.co.ke';
         }
         $options['http_errors'] = true;
 
