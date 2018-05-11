@@ -24,7 +24,7 @@ class Member
      * @param array $attributes
      * @param CacheStore $cache
      */
-    public function __construct(array $attributes = [], CacheStore $cache)
+    public function __construct(array $attributes = [], CacheStore $cache = null)
     {
         $this->attributes = $attributes;
         $this->cache = $cache == null ? new MemoryStore() : $cache;
