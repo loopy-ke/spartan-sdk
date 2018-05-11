@@ -2,14 +2,18 @@
 
 namespace Loopy\Spartan;
 
+use Loopy\Spartan\Cache\CacheStore;
+use Loopy\Spartan\Cache\MemoryStore;
 use Loopy\Spartan\Http\Client;
 
 class Member
 {
     /**
      * @var $client Client
+     * @var $cache CacheStore
      */
     protected $client;
+    protected $cache;
     protected $attributes = [];
     protected $original = [];
     protected $exists = false;
@@ -18,8 +22,42 @@ class Member
     /**
      * Member constructor.
      * @param array $attributes
+     * @param CacheStore $cache
      */
-    public function __construct(array $attributes = [])
+    public function __construct(array $attributes = [], CacheStore $cache)
+    {
+        $this->attributes = $attributes;
+        $this->cache = $cache == null ? new MemoryStore() : $cache;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCache()
+    {
+        return $this->cache;
+    }
+
+    /**
+     * @param mixed $cache
+     */
+    public function setCache($cache)
+    {
+        $this->cache = $cache;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAttributes()
+    {
+        return $this->attributes;
+    }
+
+    /**
+     * @param array $attributes
+     */
+    public function setAttributes($attributes)
     {
         $this->attributes = $attributes;
     }
@@ -62,7 +100,11 @@ class Member
      */
     public function findWithInternalId($id)
     {
-        $this->attributes = (array)$this->client->get("/member/$id");
+        if ($this->cache && $this->cache->has($id)) {
+            $this->attributes = unserialize($this->cache->get("$id"));
+        } else {
+            $this->attributes = (array)$this->client->get("/member/$id");
+        }
         $this->original = $this->attributes;
         $this->exists = true;
         return $this;
@@ -140,6 +182,7 @@ class Member
             $this->exists = true;
         }
         $this->original = $this->attributes;
+        $this->updateCache();
         return $this;
     }
 
@@ -245,6 +288,13 @@ class Member
     public function __toString()
     {
         return json_encode($this->attributes, JSON_PRETTY_PRINT);
+    }
+
+    private function updateCache()
+    {
+        if ($this->cache != null) {
+            $this->cache->put($this->id, serialize($this->getAttributes()));
+        }
     }
 
 
