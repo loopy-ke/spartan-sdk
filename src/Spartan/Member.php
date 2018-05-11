@@ -104,6 +104,7 @@ class Member
             $this->attributes = unserialize($this->cache->get("$id"));
         } else {
             $this->attributes = (array)$this->client->get("/member/$id");
+            $this->updateCache();
         }
         $this->original = $this->attributes;
         $this->exists = true;
