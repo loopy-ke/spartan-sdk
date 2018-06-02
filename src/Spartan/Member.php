@@ -191,7 +191,7 @@ class Member
     {
         $diff = [];
         foreach ($this->attributes as $key => $value) {
-            if ($this->original[$key] != $value) {
+            if (!isset($this->original[$key]) || $this->original[$key] != $value) {
                 $diff[$key] = $value;
             }
         }
