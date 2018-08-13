@@ -161,6 +161,7 @@ class Client
     private function send($request)
     {
         $response = new Response($this->client->send($request));
+
         if ($response->isJson() && $response->getResponse()->getStatusCode() >= 200 && $response->getResponse()->getStatusCode() < 300) {
             return $response->parse();
         }
